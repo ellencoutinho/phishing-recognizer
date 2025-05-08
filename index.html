@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Recognizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Phishing Recognizer</h1>
+            <p>Insira abaixo uma URL para verificar se nela há suspeitas de phishing.</p>
+        </header>
+        <main>
+            <div class="input-area">
+                <input type="url" id="urlInput" placeholder="Digite a URL aqui">
+                <button id="verifyButton">Verificar</button>
+            </div>
+            <div id="resultArea" class="hidden">
+                <h2>Resultado da Análise</h2>
+                <p id="resultText"></p>
+            </div>
+        </main>
+        <footer>
+            <p>&copy; 2025 Phishing Recognizer</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
