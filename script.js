@@ -14,6 +14,30 @@ function getDomainLabel(rawUrl) {
   return hostname.split('.')[0];
 }
 
+async function checkRedirects(url) {
+    try {
+        console.log('red');
+        const res = await fetch(url, { 
+            method: 'HEAD',
+            redirect: 'manual',
+            referrerPolicy: 'no-referrer'
+        });
+
+        if ((res.status >= 300 && res.status < 400) || res.type === 'opaqueredirect') {
+            const location = res.headers.get('location') || res.headers.get('Location');
+            return {
+                isSuspicious: true,
+                message: "Redirecionamento detectado"
+            };
+            
+        }
+        return { isSuspicious: false };
+    } catch (error) {
+        console.error('Erro ao verificar redirecionamentos:', error);
+        return { isSuspicious: false };
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const urlInput = document.getElementById('urlInput');
     const verifyButton = document.getElementById('verifyButton');
@@ -67,6 +91,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let isPhishingSuspect = false;
         let phishingReason = '';
+
+        // Verificação de redirecionamentos suspeitos
+        const redirectCheck = await checkRedirects(urlToVerify);
+        if (redirectCheck.isSuspicious) {
+            isPhishingSuspect = true;
+            phishingReason += redirectCheck.message + ' ';
+        }
 
         // Verificação de caracteres especiais
         const specialCharPattern = /["'<>@$&#%{}|\\^~\[\]`;]/;
