@@ -67,13 +67,16 @@ document.addEventListener('DOMContentLoaded', function() {
          "lg", "panasonic", "jordan", "heineken"
     ].map(brand => brand.toLowerCase());
 
-    let API_KEY = '';
+    let API_KEYS = {};
 
-    fetch('api_key.txt')
-        .then(response => response.text())
-        .then(text => { API_KEY = text.trim(); verifyButton.disabled = false; })
+    fetch('api_key.json')
+        .then(response => response.json())
+        .then(json => {
+            API_KEYS = json;
+            verifyButton.disabled = false;
+        })
         .catch(err => {
-            console.error('Erro ao carregar a chave da API:', err);
+            console.error('Erro ao carregar as chaves da API:', err);
         });
 
     verifyButton.disabled = true;  // desabilita até carregar chave
@@ -163,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             const response = await fetch(
-                `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY}`,
+                `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY.google}`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
