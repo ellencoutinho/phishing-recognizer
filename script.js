@@ -95,6 +95,60 @@ async function checkSSLCertificate(domain, API_KEYS) {
     }
 }
 
+async function checkSensitiveForms(url) {
+    try {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+
+        if (!response.ok) throw new Error(`Erro ao buscar HTML: ${response.status}`);
+
+        const html = await response.text();
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        const suspiciousInputs = [];
+        const keywords = ['login', 'senha', 'password', 'credit card', 'cvv'];
+
+        // Formulários com campos sensíveis
+        const forms = doc.querySelectorAll('form');
+        forms.forEach(form => {
+            const inputs = form.querySelectorAll('input');
+            inputs.forEach(input => {
+                const type = input.getAttribute('type')?.toLowerCase() || '';
+                const name = input.getAttribute('name')?.toLowerCase() || '';
+                const placeholder = input.getAttribute('placeholder')?.toLowerCase() || '';
+
+                if (
+                    ['password', 'email', 'tel', 'number'].includes(type) ||
+                    keywords.some(word =>
+                        name.includes(word) || placeholder.includes(word)
+                    )
+                ) {
+                    suspiciousInputs.push({ type, name, placeholder });
+                }
+            });
+        });
+
+        // Palavras fora de formulários
+        const lowerHTML = html.toLowerCase();
+        const detectedKeywords = keywords.filter(k => lowerHTML.includes(k));
+
+        const isSuspicious = suspiciousInputs.length > 0 || detectedKeywords.length > 0;
+
+        return {
+            isSuspicious,
+            suspiciousInputs,
+            detectedKeywords
+        };
+
+    } catch (err) {
+        console.error("Erro ao analisar conteúdo HTML:", err);
+        return { error: "Erro ao analisar conteúdo da página" };
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
     const urlInput = document.getElementById('urlInput');
     const verifyButton = document.getElementById('verifyButton');
@@ -252,6 +306,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!sslInfo.error) {
             phishingReason += `O certificado SSL está avaliado como ${sslInfo}`;
         }
+
+        // Verificação de formulários sensíveis
+        const htmlAnalysis = await checkSensitiveForms(urlToVerify);
+        if (htmlAnalysis.isSuspicious) {
+            isPhishingSuspect = true;
+            phishingReason += `Formulários suspeitos ou campos sensíveis detectados na página (palavras-chave: ${htmlAnalysis.detectedKeywords.join(', ') || 'nenhuma'}). `;
+        }
+
         
         if (isPhishingSuspect) {
             resultText.textContent = `A URL "${urlToVerify}" foi identificada como suspeita de phishing devido a: ${phishingReason.trim()}`;
