@@ -38,6 +38,44 @@ async function checkRedirects(url) {
     }
 }
 
+async function checkDomainAge(domain, API_KEYS) {
+    try {
+        const domainParts = domain.replace(/^https?:\/\//, '').split('/')[0];
+        console.log("testando o ", domainParts);
+        const response = await fetch(
+            `https://api.apilayer.com/whois/query?domain=${domainParts}`,
+            {
+                method: 'GET',
+                headers: { 'apikey': API_KEYS.whois }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Erro na API: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Resposta WHOIS:', data);
+
+        if (data.result && data.result.creation_date) {
+            const createdDate = new Date(data.result.creation_date);
+            const ageInDays = Math.floor((new Date() - createdDate) / (86400000));
+            
+            return {
+                ageInDays,
+                createdDate: data.result.creation_date.split('T')[0],
+                isSuspicious: ageInDays < 30,
+                registrar: data.result.registrar || 'Desconhecido'
+            };
+        }
+        
+        return { error: 'Data de criação não disponível' };
+    } catch (error) {
+        console.error('Erro WHOIS:', error);
+        return { error: 'Serviço indisponível' };
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const urlInput = document.getElementById('urlInput');
     const verifyButton = document.getElementById('verifyButton');
@@ -94,6 +132,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let isPhishingSuspect = false;
         let phishingReason = '';
+
+        // Verificação da idade do domínio
+        const domainAge = await checkDomainAge(urlToVerify, API_KEYS);
+        if (!domainAge.error && domainAge.isSuspicious) {
+            phishingReason += `⚠️ Domínio suspeito: criado há ${domainAge.ageInDays} dias (${domainAge.createdDate})`;
+        }
 
         // Verificação de redirecionamentos suspeitos
         const redirectCheck = await checkRedirects(urlToVerify);
@@ -166,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             const response = await fetch(
-                `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY.google}`,
+                `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEYS.google}`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
