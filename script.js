@@ -76,6 +76,25 @@ async function checkDomainAge(domain, API_KEYS) {
     }
 }
 
+async function checkSSLCertificate(domain, API_KEYS) {
+    const targetUrl = 
+        `https://api.ssllabs.com/api/v3/analyze?host=${domain}` +
+        `&publish=off&fromCache=on&all=on`;
+    const proxyUrl = `https://api.allorigins.win/get?url=${targetUrl}`;
+
+    try {
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error(`Proxy respondeu com ${res.status}`);
+        const wrapper = await res.json();
+        const data = JSON.parse(wrapper.contents);
+        return data.endpoints[0]?.grade;;
+    }
+    catch (err) {
+        console.error('Erro ao  consultar a API SSL Labs:', err);
+        return { error: err.message };
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const urlInput = document.getElementById('urlInput');
     const verifyButton = document.getElementById('verifyButton');
@@ -154,7 +173,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Verificação de substituição numérica
-        
         const domain = getDomainLabel(urlToVerify);
         const leetMap = { '0':'o', '1':'i', '3':'e', '4':'a', '5':'s', '7':'t' };
         const normalized = domain.replace(/[013457]/g, c => leetMap[c]);
@@ -228,6 +246,13 @@ document.addEventListener('DOMContentLoaded', function() {
             phishingReason += `Ocorreu um erro ao verificar com a API Safe Browsing: ${err.message}. `;
         }
 
+        // Verificação dos certificados SSL
+        const domainToCheck = new URL(urlToVerify).hostname;
+        sslInfo = await checkSSLCertificate(domainToCheck, API_KEYS);
+        if (!sslInfo.error) {
+            phishingReason += `O certificado SSL está avaliado como ${sslInfo}`;
+        }
+        
         if (isPhishingSuspect) {
             resultText.textContent = `A URL "${urlToVerify}" foi identificada como suspeita de phishing devido a: ${phishingReason.trim()}`;
         } else {
