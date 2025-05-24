@@ -1,3 +1,5 @@
+import { TTL_THRESHOLD, LEVENSHTEIN_THRESHOLD, TOP_100_BRANDS, KEYWORDS } from './constants.js';
+
 function getDomainLabel(rawUrl) {
   let hostname;
   try {
@@ -16,7 +18,6 @@ function getDomainLabel(rawUrl) {
 
 async function checkRedirects(url) {
     try {
-        console.log('red');
         const res = await fetch(url, { 
             method: 'HEAD',
             redirect: 'manual',
@@ -108,7 +109,6 @@ async function checkSensitiveForms(url) {
         const doc = parser.parseFromString(html, 'text/html');
 
         const suspiciousInputs = [];
-        const keywords = ['login', 'senha', 'password', 'credit card', 'cvv'];
 
         // Formulários com campos sensíveis
         const forms = doc.querySelectorAll('form');
@@ -121,7 +121,7 @@ async function checkSensitiveForms(url) {
 
                 if (
                     ['password', 'email', 'tel', 'number'].includes(type) ||
-                    keywords.some(word =>
+                    KEYWORDS.some(word =>
                         name.includes(word) || placeholder.includes(word)
                     )
                 ) {
@@ -132,7 +132,7 @@ async function checkSensitiveForms(url) {
 
         // Palavras fora de formulários
         const lowerHTML = html.toLowerCase();
-        const detectedKeywords = keywords.filter(k => lowerHTML.includes(k));
+        const detectedKeywords = KEYWORDS.filter(k => lowerHTML.includes(k));
 
         const isSuspicious = suspiciousInputs.length > 0 || detectedKeywords.length > 0;
 
@@ -154,29 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const verifyButton = document.getElementById('verifyButton');
     const resultArea = document.getElementById('resultArea');
     const resultText = document.getElementById('resultText');
-
-    const TTL_THRESHOLD = 300; // Threshold de TTL em segundos
-    const LEVENSHTEIN_THRESHOLD = 2; // Threshold para distância de Levenshtein
-    const TOP_100_BRANDS = [
-        "apple", "microsoft", "amazon", "google", "samsung", 
-        "toyota", "coca-cola", "mercedes-benz", "mcdonalds", 
-        "bmw", "louis vuitton", "tesla", "cisco", "nike", 
-        "instagram", "disney", "adobe", "oracle", "ibm", "sap",
-        "facebook", "hermes", "chanel", "youtube", "jpmorgan",
-        "honda", "americanexpress", "ikea", "allianz", "hyundai",
-        "accenture", "visa", "pepsi", "sony", "ups", "nvidia", 
-        "intel", "netflix", "mastercard", "paypal", "gucci", "zara",
-        "porsche", "airbnb", "audi", "salesforce", "ge", "axa", 
-        "volkswagen", "siemens", "adidas", "starbucks", "loreal-paris",
-        "pampers", "citi", "ford", "goldmansachs", "lego", "nissan",
-        "hm", "nescafe", "ferrari", "ebay", "hsbc", "spotify",
-        "morganstanley", "budweiser", "hp", "philips", "nintendo",
-        "nestle", "colgate", "cartier", "dior", "gillette", "santander",
-        "linkedin", "uber", "3m", "corona", "caterpillar", "danone",
-        "prada", "fedex", "kelloggs", "kia", "xiaomi", "dhl", "tiffany",
-        "sephora", "pandora", "hp", "huawei", "nespresso", "kfc", "rangerover",
-         "lg", "panasonic", "jordan", "heineken"
-    ].map(brand => brand.toLowerCase());
 
     let API_KEYS = {};
 
