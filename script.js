@@ -203,7 +203,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const domainAge = await checkDomainAge(urlToVerify, API_KEYS);
         const domainAgeCard = document.getElementById('domainAgeCard');
         if (domainAge.error) {
+            phishingIndicators++;
             domainAgeCard.querySelector('.status-text').textContent = 'Erro na verificação';
+            domainAgeCard.querySelector('.status-text').classList.add('unsafe');
         } else {
             const ageText = `${domainAge.ageInDays} dias (${domainAge.createdDate})`;
             if (domainAge.isSuspicious) {
