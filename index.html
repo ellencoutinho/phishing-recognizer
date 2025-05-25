@@ -7,25 +7,61 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Phishing Recognizer</h1>
-            <p>Insira abaixo uma URL para verificar se nela há suspeitas de phishing.</p>
-        </header>
-        <main>
-            <div class="input-area">
-                <input type="url" id="urlInput" placeholder="Digite a URL aqui">
-                <button id="verifyButton">Verificar</button>
+    <header class="page-header">
+        <h1>Phishing Recognizer</h1>
+        <p>Insira abaixo uma URL para verificar se nela há suspeitas de phishing.</p>
+    </header>
+
+    <main class="main-content">
+        <div class="input-area">
+            <input type="url" id="urlInput" placeholder="Digite a URL aqui">
+            <button id="verifyButton">Verificar</button>
+        </div>
+
+        <div id="resultContainer" class="hidden">
+            <div id="conclusionText"></div>
+            
+            <div class="analysis-grid">
+                <div class="analysis-card" id="safeBrowsingCard">
+                    <h3>Lista de Phishing</h3>
+                    <p class="status-text">Verificando...</p>
+                </div>
+                <div class="analysis-card" id="levenshteinCard">
+                    <h3>Similaridade com Marcas</h3>
+                    <p class="status-text">Verificando...</p>
+                </div>
+                <div class="analysis-card" id="specialCharsCard">
+                    <h3>Caracteres Especiais</h3>
+                    <p class="status-text">Verificando...</p>
+                </div>
+                <div class="analysis-card" id="dnsCard">
+                    <h3>DNS Dinâmico</h3>
+                    <p class="status-text">Verificando...</p>
+                </div>
+                <div class="analysis-card" id="domainAgeCard">
+                    <h3>Idade do Domínio</h3>
+                    <p class="status-text">Verificando...</p>
+                </div>
+                <div class="analysis-card" id="sslCard">
+                    <h3>Certificado SSL</h3>
+                    <p class="status-text">Verificando...</p>
+                </div>
+                <div class="analysis-card" id="redirectsCard">
+                    <h3>Redirecionamentos</h3>
+                    <p class="status-text">Verificando...</p>
+                </div>
+                <div class="analysis-card" id="formsCard">
+                    <h3>Formulários Sensíveis</h3>
+                    <p class="status-text">Verificando...</p>
+                </div>
             </div>
-            <div id="resultArea" class="hidden">
-                <h2>Resultado da Análise</h2>
-                <p id="resultText"></p>
-            </div>
-        </main>
-        <footer>
-            <p>&copy; 2025 Phishing Recognizer</p>
-        </footer>
-    </div>
+        </div>
+    </main>
+
+    <footer class="page-footer">
+        <p>&copy; 2025 Phishing Recognizer</p>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/fast-levenshtein@2.0.6/levenshtein.min.js"></script>
     <script type="module" src="script.js"></script>
 </body>

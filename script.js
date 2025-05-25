@@ -173,80 +173,137 @@ document.addEventListener('DOMContentLoaded', function() {
         const urlToVerify = urlInput.value.trim();
         if (!urlToVerify) {
             alert('Por favor, insira uma URL para verificar.');
-            resultArea.classList.add('hidden');
             return;
         }
 
-        resultText.textContent = 'Verificando...';
-        resultArea.classList.remove('hidden');
+        const conclusionText = document.getElementById('conclusionText');
+        conclusionText.textContent = 'Verificando...';
+        conclusionText.className = 'conclusion-loading';
+        
+        // Mostra o container de resultados
+        document.getElementById('resultContainer').classList.remove('hidden');
+    
+        // Reseta todos os cards
+        const allCards = document.querySelectorAll('.analysis-card');
+        allCards.forEach(card => {
+            card.querySelector('.status-text').textContent = 'Verificando...';
+            card.querySelector('.status-text').className = 'status-text';
+        });
 
+        // Variáveis para armazenar os resultados
         let isPhishingSuspect = false;
-        let phishingReason = '';
+        let phishingReasons = [];
+        let safeReasons = [];
+
+        // Contador de verificações que indicam phishing
+        let phishingIndicators = 0;
+        const thresholdForPhishing = 4; // Número mínimo de indicadores para considerar como phishing
 
         // Verificação da idade do domínio
         const domainAge = await checkDomainAge(urlToVerify, API_KEYS);
-        if (!domainAge.error && domainAge.isSuspicious) {
-            phishingReason += `⚠️ Domínio suspeito: criado há ${domainAge.ageInDays} dias (${domainAge.createdDate})`;
+        const domainAgeCard = document.getElementById('domainAgeCard');
+        if (domainAge.error) {
+            domainAgeCard.querySelector('.status-text').textContent = 'Erro na verificação';
+        } else {
+            const ageText = `${domainAge.ageInDays} dias (${domainAge.createdDate})`;
+            if (domainAge.isSuspicious) {
+                phishingIndicators++;
+                domainAgeCard.querySelector('.status-text').textContent = `Suspeito: ${ageText}`;
+                domainAgeCard.querySelector('.status-text').classList.add('unsafe');
+            } else {
+                domainAgeCard.querySelector('.status-text').textContent = `Seguro: ${ageText}`;
+                domainAgeCard.querySelector('.status-text').classList.add('safe');
+            }
         }
 
-        // Verificação de redirecionamentos suspeitos
+        // Verificação de redirecionamentos
         const redirectCheck = await checkRedirects(urlToVerify);
+        const redirectsCard = document.getElementById('redirectsCard');
         if (redirectCheck.isSuspicious) {
-            isPhishingSuspect = true;
-            phishingReason += redirectCheck.message + ' ';
+            phishingIndicators++;
+            redirectsCard.querySelector('.status-text').textContent = 'Redirecionamento suspeito';
+            redirectsCard.querySelector('.status-text').classList.add('unsafe');
+        } else {
+            redirectsCard.querySelector('.status-text').textContent = 'Nenhum redirecionamento suspeito';
+            redirectsCard.querySelector('.status-text').classList.add('safe');
         }
 
-        // Verificação de caracteres especiais
+        // Verificação de caracteres especiais e substituição numérica
+        const specialCharsCard = document.getElementById('specialCharsCard');
         const specialCharPattern = /["'<>@$&#%{}|\\^~\[\]`;]/;
-        if (specialCharPattern.test(urlToVerify)) {
-            isPhishingSuspect = true;
-            phishingReason += `A URL contém caracteres especiais suspeitos. `;
-        }
-
-        // Verificação de substituição numérica
         const domain = getDomainLabel(urlToVerify);
         const leetMap = { '0':'o', '1':'i', '3':'e', '4':'a', '5':'s', '7':'t' };
         const normalized = domain.replace(/[013457]/g, c => leetMap[c]);
-        if (normalized !== domain) {
-            isPhishingSuspect = true;
-            phishingReason += `Possível substituição numérica no domínio ("${domain}" → "${normalized}"). `;
+    
+        if (specialCharPattern.test(urlToVerify)) {
+            phishingIndicators++;
+            specialCharsCard.querySelector('.status-text').textContent = 'Caracteres suspeitos encontrados';
+            specialCharsCard.querySelector('.status-text').classList.add('unsafe');
+        } else if (normalized !== domain) {
+            phishingIndicators++;
+            specialCharsCard.querySelector('.status-text').textContent = `Substituição numérica detectada`;
+            specialCharsCard.querySelector('.status-text').classList.add('unsafe');
+        } else {
+            specialCharsCard.querySelector('.status-text').textContent = 'Sem caracteres suspeitos';
+            specialCharsCard.querySelector('.status-text').classList.add('safe');
         }
 
-        // Verificação de similaridade com marcas conhecidas (Levenshtein)
+        // Verificação de similaridade com marcas conhecidas
+        const levenshteinCard = document.getElementById('levenshteinCard');
+        let brandSimilarity = false;
         for (const brand of TOP_100_BRANDS) {
             const distance = Levenshtein.get(domain, brand);
-            
             if (distance <= LEVENSHTEIN_THRESHOLD && distance>0) {
-                isPhishingSuspect = true;
-                phishingReason += `O domínio "${domain}" é similar à marca conhecida "${brand}" (distância de Levenshtein: ${distance}). `;
-                break; // Se encontrar uma similaridade, para de verificar
+                phishingIndicators++;
+                brandSimilarity = true;
+                levenshteinCard.querySelector('.status-text').textContent = `Similar a ${brand} (${distance})`;
+                levenshteinCard.querySelector('.status-text').classList.add('unsafe');
+                break;
             }
         }
+        if (!brandSimilarity) {
+            levenshteinCard.querySelector('.status-text').textContent = 'Sem similaridade suspeita';
+            levenshteinCard.querySelector('.status-text').classList.add('safe');
+        }
 
-        // Consulta à API de DNS do Google para obter o TTL
-        let ttl = null;
+        // Verificação de DNS dinâmico
+        const dnsCard = document.getElementById('dnsCard');
         try {
             const domainToCheck = new URL(urlToVerify).hostname;
             const dnsResponse = await fetch(`https://dns.google/resolve?name=${domainToCheck}&type=A`);
-            if (dnsResponse.ok) {
-                const dnsData = await dnsResponse.json();
-                if (dnsData.Answer && dnsData.Answer.length > 0 && dnsData.Answer[0].TTL) {
-                    ttl = dnsData.Answer[0].TTL;
-                    if (ttl < TTL_THRESHOLD) {
-                        isPhishingSuspect = true;
-                        phishingReason += `O TTL do domínio (${ttl} segundos) é baixo, o que pode ser um indicador de DNS dinâmico usado para phishing.`;
-                    }
+    
+            if (!dnsResponse.ok) {
+                throw new Error('Erro na resposta DNS');
+            }
+    
+            const dnsData = await dnsResponse.json();
+            if (dnsData.Answer && dnsData.Answer.length > 0 && dnsData.Answer[0].TTL) {
+                let ttl = dnsData.Answer[0].TTL;
+                if (ttl < TTL_THRESHOLD) {
+                    phishingIndicators++;
+                    dnsCard.querySelector('.status-text').textContent = `TTL baixo (${ttl}s)`;
+                    dnsCard.querySelector('.status-text').classList.add('unsafe');
                 } else {
-                    console.warn('Não foi possível obter um registro A válido para o domínio.');
+                    dnsCard.querySelector('.status-text').textContent = `TTL normal (${ttl}s)`;
+                    dnsCard.querySelector('.status-text').classList.add('safe');
                 }
+            } else if (dnsData.Status === 3) { // domínio não existe
+                phishingIndicators++;
+                dnsCard.querySelector('.status-text').textContent = 'Domínio não existe';
+                dnsCard.querySelector('.status-text').classList.add('unsafe');
             } else {
-                console.error('Erro ao consultar a API de DNS do Google:', dnsResponse.status);
+                phishingIndicators++; // Considera erro na verificação como suspeito
+                dnsCard.querySelector('.status-text').textContent = 'Erro na verificação DNS';
+                dnsCard.querySelector('.status-text').classList.add('unsafe');
             }
         } catch (error) {
-            console.error('Erro ao consultar a API de DNS do Google:', error);
+            phishingIndicators++; 
+            dnsCard.querySelector('.status-text').textContent = 'Erro na verificação DNS';
+            dnsCard.querySelector('.status-text').classList.add('unsafe');
         }
 
         // Verificação Safe Browsing API
+        const safeBrowsingCard = document.getElementById('safeBrowsingCard');
         try {
             const body = {
                 client: { clientId: "phishing-recognizer", clientVersion: "1.0" },
@@ -266,36 +323,74 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify(body)
                 }
             );
-            if (!response.ok) throw new Error(`Erro na API Safe Browsing: ${response.status}`);
+        
+            if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
+        
             const data = await response.json();
             if (data.matches && data.matches.length) {
-                isPhishingSuspect = true;
-                phishingReason += `A URL foi identificada como suspeita de phishing pelo Safe Browsing (${data.matches[0].threatType}). `;
+                phishingIndicators++;
+                safeBrowsingCard.querySelector('.status-text').textContent = 'Listado como phishing';
+                safeBrowsingCard.querySelector('.status-text').classList.add('unsafe');
+            } else {
+                safeBrowsingCard.querySelector('.status-text').textContent = 'Não listado';
+                safeBrowsingCard.querySelector('.status-text').classList.add('safe');
             }
         } catch (err) {
-            console.error('Erro ao verificar com a API Safe Browsing:', err);
-            phishingReason += `Ocorreu um erro ao verificar com a API Safe Browsing: ${err.message}. `;
+            safeBrowsingCard.querySelector('.status-text').textContent = 'Erro na verificação';
         }
 
         // Verificação dos certificados SSL
-        const domainToCheck = new URL(urlToVerify).hostname;
-        sslInfo = await checkSSLCertificate(domainToCheck, API_KEYS);
-        if (!sslInfo.error) {
-            phishingReason += `O certificado SSL está avaliado como ${sslInfo}`;
+        const sslCard = document.getElementById('sslCard');
+        try {
+            const domainToCheckSSL = new URL(urlToVerify).hostname;
+            const sslInfo = await checkSSLCertificate(domainToCheckSSL, API_KEYS);
+    
+            if (sslInfo.error) {
+                throw new Error(sslInfo.error);
+            }
+    
+            if (!sslInfo) { // Se não retornou nenhuma informação
+                phishingIndicators++;
+                sslCard.querySelector('.status-text').textContent = 'Sem certificado válido';
+                sslCard.querySelector('.status-text').classList.add('unsafe');
+            } else {
+                sslCard.querySelector('.status-text').textContent = `Nota: ${sslInfo}`;
+                if (sslInfo === 'A' || sslInfo === 'A+') {
+                    sslCard.querySelector('.status-text').classList.add('safe');
+                } else {
+                    phishingIndicators++;
+                    sslCard.querySelector('.status-text').classList.add('unsafe');
+                }
+            }
+        } catch (error) {
+            phishingIndicators++; // Considera erro na verificação como suspeito
+            sslCard.querySelector('.status-text').textContent = 'Erro na verificação SSL';
+            sslCard.querySelector('.status-text').classList.add('unsafe');
         }
 
         // Verificação de formulários sensíveis
+        const formsCard = document.getElementById('formsCard');
         const htmlAnalysis = await checkSensitiveForms(urlToVerify);
-        if (htmlAnalysis.isSuspicious) {
-            isPhishingSuspect = true;
-            phishingReason += `Formulários suspeitos ou campos sensíveis detectados na página (palavras-chave: ${htmlAnalysis.detectedKeywords.join(', ') || 'nenhuma'}). `;
+        if (htmlAnalysis.error) {
+            formsCard.querySelector('.status-text').textContent = 'Erro na verificação';
+        } else if (htmlAnalysis.isSuspicious) {
+            phishingIndicators++;
+            formsCard.querySelector('.status-text').textContent = 'Formulários suspeitos';
+            formsCard.querySelector('.status-text').classList.add('unsafe');
+        } else {
+            formsCard.querySelector('.status-text').textContent = 'Nenhum formulário suspeito';
+            formsCard.querySelector('.status-text').classList.add('safe');
         }
 
-        
-        if (isPhishingSuspect) {
-            resultText.textContent = `A URL "${urlToVerify}" foi identificada como suspeita de phishing devido a: ${phishingReason.trim()}`;
+        // Exibe a conclusão geral baseada no número de indicadores
+        if (phishingIndicators >= thresholdForPhishing) {
+            conclusionText.textContent = `O site ${urlToVerify} provavelmente é phishing (${phishingIndicators}/8 indicadores)`;
+            conclusionText.style.color = '#dc143c';
+            conclusionText.style.backgroundColor = '#ffebee';
         } else {
-            resultText.textContent = `A URL "${urlToVerify}" parece segura (com base nas verificações realizadas).`;
+            conclusionText.textContent = `O site ${urlToVerify} provavelmente não é phishing (${phishingIndicators}/8 indicadores)`;
+            conclusionText.style.color = '#2e8b57';
+            conclusionText.style.backgroundColor = '#e8f5e9';
         }
     });
 });

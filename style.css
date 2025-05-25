@@ -1,32 +1,36 @@
 body {
     font-family: sans-serif;
     margin: 0;
-    background-color: #e6e6fa; /* Lavanda */
+    background-color: #e6e6fa;
     color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.container {
-    background-color: #f0f8ff; /* Alice Blue (um tom mais claro para o container) */
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    padding: 30px;
-    width: 80%;
-    max-width: 600px;
+.page-header {
     text-align: center;
+    padding: 2rem 1rem;
+    width: 100%;
+    max-width: 800px;
 }
 
-header h1 {
-    color: #8a2be2; /* Violeta (um tom mais forte para o título) */
-    margin-bottom: 10px;
+.page-header h1 {
+    color: #8a2be2;
+    margin-bottom: 0.5rem;
 }
 
-header p {
+.page-header p {
     color: #555;
-    margin-bottom: 20px;
+    margin-bottom: 0;
+}
+
+.main-content {
+    width: 100%;
+    max-width: 800px;
+    padding: 0 1rem;
+    margin-bottom: 2rem;
 }
 
 .input-area {
@@ -44,7 +48,7 @@ header p {
 }
 
 .input-area button {
-    background-color: #8a2be2; /* Violeta */
+    background-color: #8a2be2;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -55,30 +59,84 @@ header p {
 }
 
 .input-area button:hover {
-    background-color: #9400d3; /* Dark Violet */
+    background-color: #9400d3;
 }
 
-#resultArea {
-    margin-top: 20px;
-    padding: 15px;
-    border: 1px solid #dcdcdc;
+#resultContainer {
+    width: 100%;
+    margin-top: 2rem;
+}
+
+#conclusionText {
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1rem;
     border-radius: 4px;
-    background-color: #f9f9f9;
-    text-align: left;
 }
 
-#resultArea h2 {
+.analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.analysis-card {
+    background-color: #f0f8ff;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.analysis-card h3 {
     color: #8a2be2;
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.status-text {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.conclusion-loading {
+    color: #666;
+    background-color: #f5f5f5;
+}
+
+.safe {
+    color: #2e8b57;
+}
+
+.unsafe {
+    color: #dc143c;
+}
+
+.page-footer {
+    margin-top: auto;
+    padding: 1rem;
+    color: #777;
+    font-size: 0.9em;
+    text-align: center;
+    width: 100%;
 }
 
 .hidden {
     display: none;
 }
 
-footer {
-    margin-top: 30px;
-    color: #777;
-    font-size: 0.9em;
+@media (max-width: 768px) {
+    .analysis-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .analysis-grid {
+        grid-template-columns: 1fr;
+    }
 }
