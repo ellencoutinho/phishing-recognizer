@@ -23,35 +23,63 @@
             
             <div class="analysis-grid">
                 <div class="analysis-card" id="safeBrowsingCard">
-                    <h3>Lista de Phishing</h3>
+                    <div class="info-icon" data-tooltip="Verifica se o site está listado na lista de Phishing da API do Google Safe Browser, que é constantemente atualizada.">?</div>
+                    <div class="card-header">
+                        <h3>Lista de Phishing</h3>
+                    </div>
                     <p class="status-text">Verificando...</p>
                 </div>
+
                 <div class="analysis-card" id="levenshteinCard">
-                    <h3>Similaridade com Marcas</h3>
+                    <div class="info-icon" data-tooltip="O site enviado é comparado com a lista das 100 melhores marcas (segundo a Interbrand) usando distância de Levenshtein. Sites de phishing frequentemente usam nomes similares aos de marcas famosas para enganar usuários">?</div>
+                    <div class="card-header">
+                        <h3>Similaridade com Marcas</h3>
+                    </div>
                     <p class="status-text">Verificando...</p>
                 </div>
+
                 <div class="analysis-card" id="specialCharsCard">
-                    <h3>Caracteres Especiais</h3>
+                    <div class="info-icon" data-tooltip="Verifica presença de números em substituição a letras (ex: 'go0gle.com') e caracteres especiais no domínio. Técnica comum em phishing para imitar sites legítimos.">?</div>
+                    <div class="card-header">
+                        <h3>Caracteres Especiais</h3>
+                    </div>
                     <p class="status-text">Verificando...</p>
                 </div>
+
                 <div class="analysis-card" id="dnsCard">
-                    <h3>DNS Dinâmico</h3>
+                    <div class="info-icon" data-tooltip="Analisa o TTL (Time-To-Live) do DNS. Valores baixos (&lt;300s) indicam DNS dinâmico, frequentemente usado em phishing para dificultar rastreamento. TTL define por quanto tempo servidores devem cachear a informação DNS.">?</div>
+                    <div class="card-header">
+                        <h3>DNS Dinâmico</h3>
+                    </div>
                     <p class="status-text">Verificando...</p>
                 </div>
+
                 <div class="analysis-card" id="domainAgeCard">
-                    <h3>Idade do Domínio</h3>
+                    <div class="info-icon" data-tooltip="Verifica quando o domínio foi registrado. Domínios muito recentes (menos de 30 dias) têm maior probabilidade de serem usados para phishing, já que criminosos frequentemente criam novos sites para evitar bloqueios.">?</div>
+                    <div class="card-header">
+                        <h3>Idade do Domínio</h3>
+                    </div>
                     <p class="status-text">Verificando...</p>
                 </div>
                 <div class="analysis-card" id="sslCard">
-                    <h3>Certificado SSL</h3>
+                    <div class="info-icon" data-tooltip="Avalia a qualidade do certificado SSL usando a API da SSL Labs. Certificados inválidos ou com baixa avaliação (abaixo de 'A') são comuns em sites maliciosos.">?</div>
+                    <div class="card-header">
+                        <h3>Certificado SSL</h3>
+                    </div>
                     <p class="status-text">Verificando...</p>
                 </div>
                 <div class="analysis-card" id="redirectsCard">
-                    <h3>Redirecionamentos</h3>
+                    <div class="info-icon" data-tooltip="Verifica redirecionamentos suspeitos (códigos HTTP 3XX) ou 'opaque redirects'. Phishers frequentemente usam redirecionamentos para esconder a URL final ou levar a vítima através de múltiplos sites.">?</div>
+                    <div class="card-header">
+                        <h3>Redirecionamentos</h3>
+                    </div>
                     <p class="status-text">Verificando...</p>
                 </div>
                 <div class="analysis-card" id="formsCard">
-                    <h3>Formulários Sensíveis</h3>
+                    <div class="info-icon" data-tooltip="Busca por formulários com  as palavras-chave 'login', 'senha', 'password', 'credit card', 'cvv'.">?</div>
+                    <div class="card-header">
+                        <h3>Formulários Sensíveis</h3>
+                    </div>
                     <p class="status-text">Verificando...</p>
                 </div>
             </div>
